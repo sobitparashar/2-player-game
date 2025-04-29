@@ -10,11 +10,31 @@
       margin: 0 auto;
       border: 2px solid #fff;
     }
+
+    #reload1, #reload2 {
+      position: absolute;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      color: lightgreen;
+    }
+
+    #reload1 {
+      top: 10px;
+      left: 120px;
+    }
+
+    #reload2 {
+      top: 10px;
+      left: 660px;
+    }
   </style>
 </head>
 <body>
 
 <canvas id="gameCanvas" width="800" height="400"></canvas>
+<div id="reload1">Ready</div>
+<div id="reload2">Ready</div>
 
 <script src="game.js"></script>
 </body>
