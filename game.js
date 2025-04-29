@@ -3,18 +3,18 @@ const ctx = canvas.getContext('2d');
 
 // Player settings
 const playerSize = { width: 40, height: 40 };
-const groundLevel = 360; // Ground y-position
+const groundLevel = 360;
 
 const players = [
   { 
     x: 100, y: groundLevel, color: 'blue', hp: 100, 
     left: 'a', right: 'd', jump: 'w', shoot: 'f', 
-    vy: 0, isJumping: false, bullets: [] 
+    vy: 0, isJumping: false, bullets: [], lastShotTime: 0 
   },
   { 
     x: 660, y: groundLevel, color: 'red', hp: 100, 
     left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', shoot: 'm', 
-    vy: 0, isJumping: false, bullets: [] 
+    vy: 0, isJumping: false, bullets: [], lastShotTime: 0 
   }
 ];
 
@@ -35,39 +35,46 @@ function shoot(playerIndex) {
 
 function update() {
   players.forEach((player, index) => {
-    // Left and right movement
+    // Movement
     if (keys[player.left]) player.x -= 3;
     if (keys[player.right]) player.x += 3;
 
-    // Jump
+    // Jumping
     if (keys[player.jump] && !player.isJumping) {
       player.vy = jumpForce;
       player.isJumping = true;
     }
 
-    // Apply gravity
+    // Gravity
     player.vy += gravity;
     player.y += player.vy;
 
-    // Landing on ground
+    // Ground check
     if (player.y >= groundLevel) {
       player.y = groundLevel;
       player.vy = 0;
       player.isJumping = false;
     }
 
-    // Keep players within canvas horizontally
+    // Stay in bounds
     player.x = Math.max(0, Math.min(canvas.width - playerSize.width, player.x));
 
-    // Shoot bullets
-    if (keys[player.shoot]) {
-      if (!player.shootCooldown) {
-        shoot(index);
-        player.shootCooldown = 20; // frames between shots
-      }
-    }
+    // Shooting with 3s cooldown
+    const now = Date.now();
+    const reloadDisplay = document.getElementById(`reload${index + 1}`);
 
-    if (player.shootCooldown) player.shootCooldown--;
+    if (keys[player.shoot] && now - player.lastShotTime >= 3000) {
+      shoot(index);
+      player.lastShotTime = now;
+
+      reloadDisplay.textContent = "Reloading...";
+      reloadDisplay.style.color = "yellow";
+
+      setTimeout(() => {
+        reloadDisplay.textContent = "Ready";
+        reloadDisplay.style.color = "lightgreen";
+      }, 3000);
+    }
 
     // Move bullets
     player.bullets.forEach(bullet => bullet.x += bulletSpeed * bullet.dir);
@@ -82,7 +89,7 @@ function update() {
       }
     });
 
-    // Remove off-screen bullets
+    // Remove bullets off-screen
     player.bullets = player.bullets.filter(bullet => bullet.x > 0 && bullet.x < canvas.width);
   });
 }
@@ -90,17 +97,17 @@ function update() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw ground
+  // Ground
   ctx.fillStyle = 'green';
   ctx.fillRect(0, groundLevel + playerSize.height, canvas.width, canvas.height - groundLevel);
 
-  // Draw players
+  // Players
   players.forEach(player => {
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, playerSize.width, playerSize.height);
   });
 
-  // Draw bullets
+  // Bullets
   players.forEach(player => {
     player.bullets.forEach(bullet => {
       ctx.fillStyle = '#fff';
@@ -108,13 +115,13 @@ function draw() {
     });
   });
 
-  // Draw health bars
+  // Health bars
   ctx.fillStyle = 'blue';
   ctx.fillRect(20, 20, players[0].hp * 2, 20);
   ctx.fillStyle = 'red';
   ctx.fillRect(560, 20, players[1].hp * 2, 20);
 
-  // Draw text
+  // Health text
   ctx.fillStyle = '#fff';
   ctx.font = '20px Arial';
   ctx.fillText(`Player 1 HP: ${players[0].hp}`, 20, 60);
@@ -125,7 +132,6 @@ function gameLoop() {
   update();
   draw();
 
-  // Check win condition
   if (players[0].hp <= 0) {
     alert('Player 2 Wins!');
     window.location.reload();
